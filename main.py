@@ -3,16 +3,17 @@
 import getopt
 import sys
 import datetime
-from loader.loader import Loader
+from loader.Loader import Loader
 
 if __name__ == "__main__":
 
-    short_options = "i:o:c:l:d"
-    long_options = ["input=","output=","connection=","limit=","drop"]
+    short_options = "i:o:c:l:p:d"
+    long_options = ["input=","output=","connection=","limit=","properties=","drop"]
 
     input = None
     output = None
     connection = None
+    properties = None
     limit = 0
     drop = False
     suffix = str(datetime.datetime.today()).split()[0]
@@ -28,11 +29,13 @@ if __name__ == "__main__":
             output = v
         if o == "-c":
             connection = v
+        if o == "-p":
+            properties = v
         if o == "-l":
             limit = int(v)
         if o == "-d":
             drop = True
 
-    reporter = Loader(input, output, connection, limit, drop)
+    reporter = Loader(input, output, connection, limit, properties, drop)
 
     reporter.load()
