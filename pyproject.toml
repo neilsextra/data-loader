@@ -1,9 +1,9 @@
 [project]
-name = "data-loader"
+name = "euc-reporting"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Neil Brittliff",email = "Neil.Brittliff@outlook.com"}
+    {name = "NFB496",email = "Neil.Brittliff@servicesaustralia.gov.au"}
 ]
 readme = "README.md"
 requires-python = ">=3.12"
@@ -12,7 +12,8 @@ dependencies = [
     "psycopg2==2.9.9",
     "DateTime==5.5",
     "matplotlib (==3.10.1)",
-    "numpy (==2.2.5)"
+    "numpy (==2.2.5)",
+    "configparser (==7.2.0)"
 ]
 
 [tool.poetry]
@@ -20,7 +21,7 @@ packages = [{include = "euc_reporting", from = "src"}]
 
 [[tool.poetry.source]]
 name = "nexus"
-url = "https://nexus.../repository/pypi-org/simple"
+url = "https://nexus-dhs.csda.gov.au/repository/pypi-org/simple"
 priority = "primary"
 
 [build-system]
