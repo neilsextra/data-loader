@@ -8,12 +8,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+import configparser
+from ast import literal_eval
+
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
 import logging
 from pathlib import Path
 
-import euc_reporting.config as config
+import euc_reporting.config as consts
 
 logging.basicConfig(format="{asctime} - {levelname} - {message}",
                     style="{",     
@@ -23,7 +26,16 @@ logging.basicConfig(format="{asctime} - {levelname} - {message}",
 logger = logging.getLogger(__name__)
 
 class Store: 
-    def __init__(self, connection:str, drop:bool) -> None:
+    def __init__(self, connection:str, properties:str, drop:bool) -> None:
+
+        config = configparser.RawConfigParser()
+
+        if properties != None:
+            config.read(properties)
+            self.date_fields = literal_eval(config['DATE FIELDS']['date_fields'])
+            logger.info(self.date_fields)
+        else:
+             self.date_fields = None
 
         parts = connection.split(":")
 
@@ -60,7 +72,10 @@ class Store:
 
         logger.info('Tablename: %s', tablename)
         logger.info('Primary Key: %s',  primary_key)
-        date_set = frozenset(config.date_fields)
+
+        date_fields = None
+        if self.date_fields != None:
+            date_set = frozenset(self.date_fields)
         
         drop_sql_statement = f"drop table IF EXISTS \"{self.schema}\".\"{tablename}\" " 
 
@@ -118,10 +133,18 @@ class Processor:
         self.loader.load(self.database)
 
 class Loader:
-    def __init__(self, input:str, output:str, limit:int) -> None:
+    def __init__(self, input:str, output:str, properties:str, limit:int) -> None:
         self.input = input
         self.output = output
         self.limit = limit
+
+        config = configparser.RawConfigParser()
+
+        self.batch_size = consts.batch_size
+
+        if properties != None:
+            config.read(properties)
+            self.batch_size = int(config['BATCH PARAMETERS']['batch_size'])
 
         self.times = []
 
@@ -138,7 +161,7 @@ class Loader:
             x = []
             y = []
 
-            batch_size = config.batch_size
+            batch_size = self.batch_size
             batch_counter = 0
             batch_total = 0
 
@@ -218,11 +241,16 @@ The container required for dependecy injection
 class Container(containers.DeclarativeContainer):
     config = providers.Configuration()
 
-    loader = providers.Singleton(Loader, input=config.input, output=config.output, limit=config.limit)
+    loader = providers.Singleton(Loader, 
+                                input=config.input, 
+                                output=config.output, 
+                                properties=config.properties,
+                                limit=config.limit)
 
     database = providers.Singleton(
         Store,
         connection=config.connection,
+        properties=config.properties,
         drop=config.drop
     )
 
@@ -236,7 +264,7 @@ Note: dependency injection is used throughout this program
 class Reporter:
     processor: Processor = Provide[Container.processor]
 
-    def __init__(self, input, output, connection, limit, drop):
+    def __init__(self, input, output, connection, limit, properties, drop):
         """
         Setup the dependecy injection
         """
@@ -246,6 +274,7 @@ class Reporter:
         container.config.output.from_value(output)
         container.config.connection.from_value(connection)
         container.config.limit.from_value(limit)
+        container.config.properties.from_value(properties)
         container.config.drop.from_value(drop)
 
         container.wire(modules=[__name__])
