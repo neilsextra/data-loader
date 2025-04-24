@@ -33,6 +33,6 @@ if __name__ == "__main__":
         if o == "-d":
             drop = True
 
-    reporter = Reporter(input, output, connection, limit, drop)
+    reporter = Loader(input, output, connection, limit, drop)
 
     reporter.load()
